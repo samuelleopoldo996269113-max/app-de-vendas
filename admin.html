@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Painel da loja</title>
+  <meta name="theme-color" content="#1f5f4a">
+  <meta name="robots" content="noindex">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topo">
+    <h1>Painel da loja</h1>
+    <a class="icone" href="./" target="_blank" style="text-decoration:none">Ver loja</a>
+    <button class="icone" id="btn-sair" hidden>Sair</button>
+  </header>
+
+  <!-- Login -->
+  <section id="tela-login" class="centro" hidden>
+    <form class="bloco" id="form-login">
+      <h2>Entrar no painel</h2>
+      <label>E-mail <input type="email" id="adm-email" required autocomplete="email"></label>
+      <label>Senha <input type="password" id="adm-senha" required minlength="6" autocomplete="current-password"></label>
+      <p class="erro" id="adm-erro"></p>
+      <button class="btn cheio" type="submit" data-acao="entrar">Entrar</button>
+      <button class="btn sec cheio" type="submit" data-acao="criar">Criar conta da loja (primeira vez)</button>
+    </form>
+  </section>
+
+  <section id="tela-sem-acesso" class="centro" hidden>
+    <div class="bloco"><h2>Sem acesso</h2>
+      <p>Esta conta não é a da loja. Saia e entre com o e-mail da loja.</p></div>
+  </section>
+
+  <section id="tela-demo" class="centro" hidden>
+    <div class="bloco"><h2>Firebase não configurado</h2>
+      <p>Preencha o arquivo <b>js/firebase-config.js</b> seguindo o README para ativar o painel.</p></div>
+  </section>
+
+  <!-- Painel -->
+  <div id="tela-painel" hidden>
+    <nav class="abas">
+      <button class="aba ativa" data-aba="pedidos">📦 Pedidos</button>
+      <button class="aba" data-aba="produtos">🧴 Produtos</button>
+      <button class="aba" data-aba="importar">📂 Importar</button>
+      <button class="aba" data-aba="clientes">👥 Clientes</button>
+      <button class="aba" data-aba="loja">⚙️ Loja</button>
+    </nav>
+
+    <!-- PEDIDOS -->
+    <section class="painel ativo" id="aba-pedidos">
+      <div class="filtros">
+        <select id="filtro-status"><option value="">Todos os status</option></select>
+        <input type="search" id="busca-pedidos" placeholder="Buscar cliente ou produto...">
+      </div>
+      <div class="lista-adm" id="lista-pedidos"></div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="painel" id="aba-produtos">
+      <div class="lado-a-lado" id="area-cadastro">
+        <form class="bloco" id="form-produto">
+          <h2 id="titulo-form">Novo produto</h2>
+          <label>📖 Abrir catálogo ao lado (PDF ou foto da página)
+            <input type="file" id="arquivo-catalogo" accept="application/pdf,image/*"></label>
+          <label>Nome <input type="text" id="p-nome" required></label>
+          <div class="dupla">
+            <label>Código <input type="text" id="p-codigo"></label>
+            <label>Categoria <input type="text" id="p-categoria" list="lista-categorias" placeholder="Perfumaria..."></label>
+          </div>
+          <datalist id="lista-categorias"></datalist>
+          <div class="dupla">
+            <label>Preço (€) <input type="text" id="p-preco" inputmode="decimal" required placeholder="0,00"></label>
+            <label>Estoque (pronta entrega) <input type="number" id="p-estoque" min="0" value="0"></label>
+          </div>
+          <label>Descrição <textarea id="p-descricao"></textarea></label>
+          <label>Foto <input type="file" id="p-foto" accept="image/*"></label>
+          <img id="p-prev" class="prev-foto" alt="" hidden>
+          <label class="check"><input type="checkbox" id="p-ativo" checked> <span>Visível na loja</span></label>
+          <p class="erro" id="p-erro"></p>
+          <div class="dupla">
+            <button class="btn" type="submit" id="btn-salvar-prod">Salvar produto</button>
+            <button class="btn sec" type="button" id="btn-cancelar-edicao" hidden>Cancelar edição</button>
+          </div>
+        </form>
+        <div class="bloco" id="visor-catalogo" hidden>
+          <div class="linha" style="display:flex;justify-content:space-between;align-items:center">
+            <h2>Catálogo</h2><button class="btn peq sec" id="btn-fechar-catalogo">Fechar</button>
+          </div>
+          <div id="visor-conteudo"></div>
+        </div>
+      </div>
+
+      <div class="filtros">
+        <input type="search" id="busca-produtos" placeholder="Buscar produto...">
+        <select id="filtro-categoria"><option value="">Todas as categorias</option></select>
+      </div>
+      <p class="dica" id="resumo-produtos"></p>
+      <div class="lista-adm" id="lista-produtos"></div>
+    </section>
+
+    <!-- IMPORTAR -->
+    <section class="painel" id="aba-importar">
+      <div class="bloco">
+        <h2>📊 Importar planilha (Excel ou CSV)</h2>
+        <p class="dica">Colunas aceitas: <b>nome</b>, <b>codigo</b>, <b>categoria</b>, <b>descricao</b>, <b>preco</b>, <b>estoque</b>.
+          Se o código já existir, o produto é atualizado em vez de duplicado.</p>
+        <button class="btn sec peq" id="btn-modelo" style="align-self:flex-start">Baixar planilha modelo</button>
+        <input type="file" id="arquivo-planilha" accept=".xlsx,.xls,.csv,.ods">
+        <div id="previa-planilha"></div>
+        <button class="btn" id="btn-importar" hidden>Importar produtos</button>
+      </div>
+
+      <div class="bloco">
+        <h2>🖼️ Fotos em lote</h2>
+        <p class="dica">Selecione várias fotos de uma vez. Dê a cada arquivo o <b>código do produto</b> como nome
+          (ex.: <b>12345.jpg</b>) e a foto entra no produto certo automaticamente.</p>
+        <input type="file" id="arquivo-fotos" accept="image/*" multiple>
+        <div id="resultado-fotos" class="dica"></div>
+      </div>
+
+      <div class="bloco">
+        <h2>📖 Catálogo em PDF ou foto</h2>
+        <p class="dica">Na aba <b>Produtos</b>, use "Abrir catálogo ao lado" para cadastrar olhando as páginas.
+          A leitura automática por inteligência artificial pode ser adicionada depois.</p>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="painel" id="aba-clientes">
+      <input type="search" id="busca-clientes" placeholder="Buscar cliente...">
+      <div class="lista-adm" id="lista-clientes"></div>
+    </section>
+
+    <!-- LOJA -->
+    <section class="painel" id="aba-loja">
+      <form class="bloco" id="form-loja">
+        <h2>Dados da loja</h2>
+        <label>Nome da loja <input type="text" id="cfg-nome" required></label>
+        <label>WhatsApp da loja (com código do país) <input type="tel" id="cfg-whats" placeholder="+39 ..."></label>
+        <label>Texto sobre pagamento (aparece ao finalizar o pedido)
+          <textarea id="cfg-pagamento" placeholder="Ex.: Pagamento na entrega ou por transferência."></textarea></label>
+        <label>Aviso de privacidade (deixe vazio para usar o padrão) <textarea id="cfg-priv"></textarea></label>
+        <button class="btn" type="submit">Salvar</button>
+      </form>
+    </section>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
