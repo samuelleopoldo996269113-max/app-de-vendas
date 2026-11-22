@@ -32,7 +32,7 @@ Sem o Firebase configurado, a loja abre em **modo demonstração**, com 3 produt
 2. **Authentication** > Começar > ative **E-mail/senha** e **Google**.
 3. **Firestore Database** > Criar banco de dados > escolha a região `europe-west` > modo de produção.
 4. Em **Firestore > Regras**, cole o conteúdo de `firestore.rules`, **troque o e-mail** pelo da loja e clique em Publicar.
-5. **Configurações do projeto** (engrenagem) > Seus apps > ícone **</>** (Web) > registre o app. Copie os valores do `firebaseConfig` para `js/firebase-config.js` e coloque o e-mail da loja em `ADMIN_EMAIL`.
+5. **Configurações do projeto** (engrenagem) > Seus apps > ícone **</>** (Web) > registre o app. Copie os valores do `firebaseConfig` para `js/firebase-config.js` e coloque os e-mails do painel em `ADMIN_EMAILS`.
 6. **Authentication > Configurações > Domínios autorizados** > adicione `samuelleopoldo996269113-max.github.io`.
 7. Abra `admin.html`, clique em **Criar conta da loja (primeira vez)** com o e-mail da loja e preencha a aba **⚙️ Loja**.
 
