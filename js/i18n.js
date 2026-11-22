@@ -32,6 +32,9 @@ const TEXTOS = {
     privTitulo: 'Aviso de privacidade', semPedidos: 'Você ainda não fez pedidos.', carregandoP: 'Carregando...',
     erroCarregar: 'Erro ao carregar: ', retiradaTxt: 'Retirada', entregaTxt: 'Entrega', sobEncomenda: 'sob encomenda',
     whatsMsg: 'Olá! Acabei de fazer o pedido #{id} no site.',
+    compartilhar: 'Compartilhar', linkCopiado: 'Link copiado!', destaque: '⭐ Destaque', promocao: '🔥 Promoção',
+    senhaFraca: 'Senha fraca. Falta: {f}.', faltaMin: '{n} caracteres', faltaMinusc: 'letra minúscula',
+    faltaMaiusc: 'letra maiúscula', faltaNum: 'número', dicaSenha: 'Mínimo 8 caracteres, com maiúscula, minúscula e número.',
     status: { recebido: 'Recebido', separando: 'Separando', saiu: 'Saiu para entrega', pronto: 'Pronto para retirar', entregue: 'Entregue', cancelado: 'Cancelado' },
     privacidade: 'Seus dados (nome, WhatsApp, e-mail e endereço) são usados apenas para processar e entregar seus pedidos e para entrar em contato sobre eles. Não são vendidos nem repassados a terceiros. Você pode pedir a qualquer momento para ver, corrigir ou apagar seus dados falando com a loja.'
   },
@@ -67,6 +70,9 @@ const TEXTOS = {
     privTitulo: 'Informativa sulla privacy', semPedidos: 'Non hai ancora fatto ordini.', carregandoP: 'Caricamento...',
     erroCarregar: 'Errore di caricamento: ', retiradaTxt: 'Ritiro', entregaTxt: 'Consegna', sobEncomenda: 'su ordinazione',
     whatsMsg: 'Ciao! Ho appena fatto l\'ordine #{id} sul sito.',
+    compartilhar: 'Condividi', linkCopiado: 'Link copiato!', destaque: '⭐ In evidenza', promocao: '🔥 Offerta',
+    senhaFraca: 'Password debole. Manca: {f}.', faltaMin: '{n} caratteri', faltaMinusc: 'lettera minuscola',
+    faltaMaiusc: 'lettera maiuscola', faltaNum: 'numero', dicaSenha: 'Minimo 8 caratteri, con maiuscola, minuscola e numero.',
     status: { recebido: 'Ricevuto', separando: 'In preparazione', saiu: 'In consegna', pronto: 'Pronto per il ritiro', entregue: 'Consegnato', cancelado: 'Annullato' },
     privacidade: 'I tuoi dati (nome, WhatsApp, e-mail e indirizzo) sono usati solo per gestire e consegnare i tuoi ordini e per contattarti in merito. Non vengono venduti né ceduti a terzi. Puoi chiedere in qualsiasi momento di vedere, correggere o cancellare i tuoi dati contattando il negozio.'
   }

@@ -192,3 +192,9 @@ th { background: var(--cor-clara); }
 
 details summary { cursor: pointer; font-weight: 600; color: var(--cor); padding: 4px 0; }
 details[open] { display: flex; flex-direction: column; gap: 8px; }
+
+.card .foto { position: relative; }
+.fita { position: absolute; top: 8px; left: 8px; background: var(--destaque); color: #fff; font-size: .72rem;
+  font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.preco s { color: var(--suave); font-size: .8rem; }
+.promo { color: #b3261e; }

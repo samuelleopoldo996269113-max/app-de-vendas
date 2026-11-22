@@ -105,3 +105,24 @@ export function registrarSW() {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 }
+
+// Diz o que falta para a senha ser forte (lista vazia = senha ok)
+export function problemasSenha(senha, minimo = 8, exigirSimbolo = false) {
+  const s = String(senha || '');
+  const falta = [];
+  if (s.length < minimo) falta.push(`${minimo} caracteres`);
+  if (!/[a-z]/.test(s)) falta.push('letra minúscula');
+  if (!/[A-Z]/.test(s)) falta.push('letra maiúscula');
+  if (!/\d/.test(s)) falta.push('número');
+  if (exigirSimbolo && !/[^A-Za-z0-9]/.test(s)) falta.push('símbolo (ex.: ! @ # $)');
+  return falta;
+}
+
+export function baixarArquivo(nome, conteudo, tipo = 'application/json') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(conteudo instanceof Blob ? conteudo : new Blob([conteudo], { type: tipo }));
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}

@@ -1,15 +1,16 @@
 // ===================== PAINEL (parte da dona da loja) =====================
 import { auth, db, configurado, isAdmin } from './firebase.js';
 import {
-  onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut
+  onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut,
+  sendEmailVerification, sendPasswordResetEmail, reload
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   collection, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch,
-  runTransaction, serverTimestamp, query, orderBy
+  runTransaction, serverTimestamp, query, orderBy, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   $, $$, euro, esc, norm, parsePreco, parseInteiro, comprimirImagem, toast, STATUS, dataBR,
-  linkWhats, erroAuth, registrarSW
+  linkWhats, erroAuth, registrarSW, problemasSenha, baixarArquivo
 } from './util.js';
 
 let produtos = [];
@@ -22,8 +23,8 @@ const cancelar = []; // funções para parar de ouvir o banco ao sair
 
 // ---------- telas ----------
 function mostrarTela(id) {
-  ['tela-login', 'tela-sem-acesso', 'tela-demo', 'tela-painel'].forEach((t) => ($('#' + t).hidden = t !== id));
-  $('#btn-sair').hidden = !(id === 'tela-painel' || id === 'tela-sem-acesso');
+  ['tela-login', 'tela-sem-acesso', 'tela-demo', 'tela-painel', 'tela-verificar'].forEach((t) => ($('#' + t).hidden = t !== id));
+  $('#btn-sair').hidden = !['tela-painel', 'tela-sem-acesso', 'tela-verificar'].includes(id);
 }
 
 $$('.aba').forEach((b) => b.addEventListener('click', () => {
@@ -40,21 +41,79 @@ $('#form-login').addEventListener('submit', async (e) => {
   const email = $('#adm-email').value.trim();
   const senha = $('#adm-senha').value;
   try {
-    if (acao === 'criar') await createUserWithEmailAndPassword(auth, email, senha);
-    else await signInWithEmailAndPassword(auth, email, senha);
-  } catch (err) { $('#adm-erro').textContent = erroAuth(err); }
+    if (acao === 'criar') {
+      const falta = problemasSenha(senha, 10, true);
+      if (falta.length) throw new Error('Senha fraca. Falta: ' + falta.join(', ') + '.');
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      await sendEmailVerification(cred.user);
+    } else {
+      await signInWithEmailAndPassword(auth, email, senha);
+    }
+    $('#adm-senha').value = '';
+  } catch (err) { $('#adm-erro').textContent = err.code ? erroAuth(err) : err.message; }
 });
 $('#btn-sair').addEventListener('click', () => signOut(auth));
+$('#btn-sair-todos').addEventListener('click', () => signOut(auth));
+
+async function enviarReset(email) {
+  if (!email) throw new Error('Digite o e-mail da loja no campo acima.');
+  await sendPasswordResetEmail(auth, email);
+  toast('Link para criar nova senha enviado para ' + email);
+}
+$('#adm-esqueci').addEventListener('click', async () => {
+  try { await enviarReset($('#adm-email').value.trim()); }
+  catch (err) { $('#adm-erro').textContent = err.code ? erroAuth(err) : err.message; }
+});
+$('#btn-trocar-senha').addEventListener('click', async () => {
+  try { await enviarReset(auth.currentUser?.email); }
+  catch (err) { toast('Erro: ' + err.message, 'erro'); }
+});
+
+// ---------- verificação de e-mail ----------
+$('#btn-reenviar').addEventListener('click', async () => {
+  try { await sendEmailVerification(auth.currentUser); toast('E-mail reenviado!'); }
+  catch (err) { toast(erroAuth(err), 'erro'); }
+});
+$('#btn-ja-confirmei').addEventListener('click', async () => {
+  await reload(auth.currentUser);
+  await auth.currentUser.getIdToken(true); // atualiza a permissão no banco
+  if (auth.currentUser.emailVerified) entrarNoPainel(auth.currentUser);
+  else toast('Ainda não confirmado. Abra o link do e-mail.', 'erro');
+});
+
+// ---------- sair sozinho depois de 30 min sem uso ----------
+const LIMITE_INATIVO = 30 * 60 * 1000;
+let timerInativo = null;
+function reiniciarTimer() {
+  clearTimeout(timerInativo);
+  if (!auth?.currentUser) return;
+  timerInativo = setTimeout(async () => {
+    await signOut(auth);
+    toast('Você saiu por segurança (30 min sem uso).');
+  }, LIMITE_INATIVO);
+}
+['click', 'keydown', 'touchstart', 'scroll'].forEach((ev) =>
+  document.addEventListener(ev, reiniciarTimer, { passive: true }));
+
+function entrarNoPainel(u) {
+  if (!u.emailVerified) {
+    $('#email-verificar').textContent = u.email;
+    return mostrarTela('tela-verificar');
+  }
+  mostrarTela('tela-painel');
+  reiniciarTimer();
+  iniciarPainel();
+}
 
 if (!configurado) {
   mostrarTela('tela-demo');
 } else {
   onAuthStateChanged(auth, (u) => {
     cancelar.splice(0).forEach((f) => f());
+    clearTimeout(timerInativo);
     if (!u) return mostrarTela('tela-login');
     if (!isAdmin(u)) return mostrarTela('tela-sem-acesso');
-    mostrarTela('tela-painel');
-    iniciarPainel();
+    entrarNoPainel(u);
   });
 }
 
@@ -75,6 +134,7 @@ function iniciarPainel() {
     renderClientes();
   }));
   carregarConfig();
+  verificarBackup();
 }
 
 // ================= PEDIDOS =================
@@ -175,7 +235,7 @@ function renderProdutos() {
   $('#lista-produtos').innerHTML = lista.length ? lista.map((p) => `
     <div class="prod-adm" style="${p.ativo === false ? 'opacity:.55' : ''}">
       ${p.foto ? `<img src="${esc(p.foto)}" alt="" loading="lazy">` : '<div class="mini">🧴</div>'}
-      <div class="dados"><b>${esc(p.nome)}</b>
+      <div class="dados"><b>${p.destaque ? '⭐ ' : ''}${esc(p.nome)}</b>
         <small>${esc(p.codigo || 's/ código')} · ${esc(p.categoria || 'Geral')} · ${euro(p.preco)}${p.ativo === false ? ' · oculto' : ''}</small></div>
       <div class="acoes">
         <div class="qtd"><button data-est="-1" data-id="${p.id}">−</button>
@@ -231,6 +291,8 @@ function editarProduto(id) {
   $('#p-nome-it').value = p.nome_it || '';
   $('#p-descricao-it').value = p.descricao_it || '';
   $('#p-ativo').checked = p.ativo !== false;
+  $('#p-destaque').checked = !!p.destaque;
+  $('#p-preco-antigo').value = p.precoAntigo ? String(p.precoAntigo).replace('.', ',') : '';
   if (p.foto) { $('#p-prev').src = p.foto; $('#p-prev').hidden = false; }
   $('#titulo-form').textContent = 'Editar produto';
   $('#btn-cancelar-edicao').hidden = false;
@@ -262,8 +324,11 @@ $('#form-produto').addEventListener('submit', async (e) => {
     nome_it: $('#p-nome-it').value.trim(),
     descricao_it: $('#p-descricao-it').value.trim(),
     ativo: $('#p-ativo').checked,
+    destaque: $('#p-destaque').checked,
+    precoAntigo: parsePreco($('#p-preco-antigo').value) || null,
     atualizadoEm: serverTimestamp()
   };
+  if (dados.precoAntigo && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;
   if (fotoNova) dados.foto = fotoNova;
   try {
     if (dados.codigo && produtos.some((p) => p.codigo === dados.codigo && p.id !== editandoId))
@@ -467,6 +532,140 @@ $('#form-loja').addEventListener('submit', async (e) => {
     }, { merge: true });
     toast('Dados da loja salvos');
   } catch (err) { toast('Erro: ' + err.message, 'erro'); }
+});
+
+// ================= BACKUP =================
+// Datas do Firebase viram { __ts: milissegundos } no arquivo e voltam a ser datas na restauração
+function serializar(v) {
+  if (v && typeof v.toMillis === 'function') return { __ts: v.toMillis() };
+  if (Array.isArray(v)) return v.map(serializar);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, serializar(x)]));
+  return v;
+}
+function desserializar(v) {
+  if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 1 && typeof v.__ts === 'number')
+    return Timestamp.fromMillis(v.__ts);
+  if (Array.isArray(v)) return v.map(desserializar);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, desserializar(x)]));
+  return v;
+}
+const semId = ({ id, ...resto }) => resto;
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+async function verificarBackup() {
+  try {
+    const d = await getDoc(doc(db, 'config', 'backup'));
+    const ms = d.exists() && d.data().em?.toMillis ? d.data().em.toMillis() : 0;
+    const dias = ms ? Math.floor((Date.now() - ms) / 86400000) : null;
+    $('#info-backup').textContent = ms
+      ? `Último backup: ${dataBR(d.data().em)} (${dias === 0 ? 'hoje' : dias + ' dia(s) atrás'})`
+      : 'Nenhum backup feito ainda.';
+    const aviso = $('#aviso-backup');
+    aviso.hidden = !(dias === null || dias >= 7);
+    aviso.textContent = dias === null
+      ? '💾 Você ainda não fez nenhum backup. Vá na aba Backup e baixe uma cópia.'
+      : `💾 Seu último backup foi há ${dias} dias. Faça um novo na aba Backup.`;
+  } catch {}
+}
+
+$('#btn-backup').addEventListener('click', async () => {
+  const btn = $('#btn-backup');
+  btn.disabled = true;
+  try {
+    const comFotos = $('#bk-fotos').checked;
+    const loja = await getDoc(doc(db, 'config', 'loja'));
+    const dados = {
+      app: 'app-de-vendas',
+      versao: 1,
+      criadoEm: new Date().toISOString(),
+      comFotos,
+      produtos: produtos.map((p) => serializar(comFotos ? p : { ...p, foto: undefined })),
+      pedidos: pedidos.map(serializar),
+      clientes: clientes.map(serializar),
+      config: { loja: loja.exists() ? serializar(loja.data()) : {} }
+    };
+    baixarArquivo(`backup-loja-${hoje()}.json`, JSON.stringify(dados));
+    await setDoc(doc(db, 'config', 'backup'), { em: serverTimestamp() });
+    toast(`Backup baixado: ${produtos.length} produtos, ${pedidos.length} pedidos, ${clientes.length} clientes`);
+    verificarBackup();
+  } catch (err) { toast('Erro no backup: ' + err.message, 'erro'); }
+  finally { btn.disabled = false; }
+});
+
+let backupLido = null;
+$('#arquivo-backup').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  backupLido = null;
+  $('#btn-restaurar').hidden = true;
+  if (!f) return;
+  try {
+    const dados = JSON.parse(await f.text());
+    if (dados.app !== 'app-de-vendas' || !Array.isArray(dados.produtos)) throw new Error('Este arquivo não é um backup da loja.');
+    backupLido = dados;
+    $('#previa-backup').innerHTML = `<div class="caixa">Backup de <b>${dataBR(dados.criadoEm)}</b><br>
+      ${dados.produtos.length} produtos · ${(dados.pedidos || []).length} pedidos · ${(dados.clientes || []).length} clientes
+      ${dados.comFotos ? '' : '<br><small>(sem fotos — as fotos atuais serão mantidas)</small>'}</div>`;
+    $('#btn-restaurar').hidden = false;
+  } catch (err) {
+    $('#previa-backup').innerHTML = `<p class="erro">${esc(err.message === 'Unexpected end of JSON input' ? 'Arquivo inválido.' : err.message)}</p>`;
+  }
+});
+
+$('#btn-restaurar').addEventListener('click', async () => {
+  if (!backupLido) return;
+  if (!confirm('Restaurar este backup? Produtos, pedidos e clientes do arquivo vão substituir as versões atuais com o mesmo código interno.')) return;
+  const btn = $('#btn-restaurar');
+  btn.disabled = true;
+  try {
+    const operacoes = [];
+    for (const [col, lista] of [['produtos', backupLido.produtos], ['pedidos', backupLido.pedidos || []], ['clientes', backupLido.clientes || []]]) {
+      for (const item of lista) {
+        if (!item.id) continue;
+        const dados = desserializar(semId(item));
+        // backup sem fotos: não apaga a foto que já existe
+        operacoes.push([doc(db, col, item.id), dados, col === 'produtos' && !backupLido.comFotos]);
+      }
+    }
+    if (backupLido.config?.loja) operacoes.push([doc(db, 'config', 'loja'), desserializar(backupLido.config.loja), true]);
+    for (let i = 0; i < operacoes.length; i += 400) {
+      const lote = writeBatch(db);
+      operacoes.slice(i, i + 400).forEach(([ref, dados, merge]) => lote.set(ref, dados, merge ? { merge: true } : {}));
+      btn.textContent = `Restaurando... ${Math.min(i + 400, operacoes.length)}/${operacoes.length}`;
+      await lote.commit();
+    }
+    toast('Backup restaurado!');
+    backupLido = null;
+    $('#previa-backup').innerHTML = '';
+    $('#arquivo-backup').value = '';
+    btn.hidden = true;
+  } catch (err) { toast('Erro ao restaurar: ' + err.message, 'erro'); }
+  finally { btn.disabled = false; btn.textContent = 'Restaurar agora'; }
+});
+
+$('#btn-exportar').addEventListener('click', async () => {
+  try {
+    const X = await carregarXLSX();
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(produtos.map((p) => ({
+      Nome: p.nome, Código: p.codigo, Categoria: p.categoria, Preço: p.preco, Estoque: p.estoque,
+      'Nome (IT)': p.nome_it || '', Visível: p.ativo === false ? 'não' : 'sim', Destaque: p.destaque ? 'sim' : ''
+    }))), 'Produtos');
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(pedidos.map((p) => ({
+      Data: dataBR(p.criadoEm), Pedido: p.id.slice(0, 6).toUpperCase(), Cliente: p.clienteNome, WhatsApp: p.clienteWhatsapp,
+      Itens: (p.itens || []).map((i) => `${i.qtd}x ${i.nome}`).join(', '), Total: p.total,
+      Entrega: p.entrega, Pagamento: p.pagamento || '', Pago: p.pago ? 'sim' : 'não', Status: STATUS[p.status] || p.status
+    }))), 'Pedidos');
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(clientes.map((c) => {
+      const peds = pedidos.filter((p) => p.clienteId === c.id && p.status !== 'cancelado');
+      const e = c.endereco || {};
+      return {
+        Nome: c.nome, 'E-mail': c.email, WhatsApp: c.whatsapp,
+        Endereço: [e.rua, e.cap, e.cidade, e.complemento].filter(Boolean).join(', '),
+        Pedidos: peds.length, 'Total gasto': peds.reduce((s, p) => s + (Number(p.total) || 0), 0)
+      };
+    })), 'Clientes');
+    X.writeFile(wb, `loja-${hoje()}.xlsx`);
+  } catch (err) { toast('Erro ao exportar: ' + err.message, 'erro'); }
 });
 
 registrarSW();

@@ -46,6 +46,23 @@ No plano gratuito do GitHub, o Pages só funciona com o repositório **público*
 - Loja: `https://samuelleopoldo996269113-max.github.io/app-de-vendas/`
 - Painel: `https://samuelleopoldo996269113-max.github.io/app-de-vendas/admin.html`
 
+## Segurança
+
+- **Conta da loja:** a senha precisa ter no mínimo 10 caracteres, com maiúscula, minúscula, número e símbolo. O painel só abre depois de **confirmar o e-mail** (o link chega por e-mail na criação da conta).
+- O painel **fecha sozinho** depois de 30 minutos sem uso.
+- **Esqueci minha senha** na tela de login, e **Trocar senha** na aba 💾 Backup.
+- **Clientes:** a senha precisa ter no mínimo 8 caracteres, com maiúscula, minúscula e número.
+- As regras do banco (`firestore.rules`) só aceitam pedidos com dados válidos, e cada cliente só vê os próprios dados.
+- Recomendado no Firebase: **Authentication > Configurações > Proteção contra enumeração de e-mail** (ligada) e **Política de senha**.
+
+## Backup
+
+Aba **💾 Backup** no painel:
+- **Baixar backup:** gera um arquivo `.json` com tudo (produtos, fotos, pedidos, clientes e configurações). Guarde no Google Drive ou no e-mail.
+- **Exportar planilha:** gera um `.xlsx` com produtos, pedidos e clientes.
+- **Restaurar:** devolve os dados de um arquivo de backup.
+- Se passar 7 dias sem backup, aparece um aviso no topo do painel.
+
 ## Importar produtos
 
 - **Planilha** (.xlsx, .xls, .csv, .ods): colunas `nome`, `codigo`, `categoria`, `descricao`, `preco`, `estoque`. Tem um modelo para baixar no painel. Se o código já existir, o produto é atualizado.

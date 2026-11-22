@@ -7,7 +7,7 @@ import {
 import {
   collection, onSnapshot, doc, getDoc, setDoc, addDoc, query, where, getDocs, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { $, $$, euro, esc, norm, toast, dataBR, linkWhats, erroAuth, registrarSW } from './util.js';
+import { $, $$, euro, esc, norm, toast, dataBR, linkWhats, erroAuth, registrarSW, problemasSenha } from './util.js';
 import { t, idioma, setIdioma, traduzirPagina, nomeProduto, descProduto } from './i18n.js';
 
 // ---------- estado ----------
@@ -67,6 +67,7 @@ function iniciarProdutos() {
     carregado = true;
     renderizar();
     atualizarContador();
+    abrirProdutoDoLink();
   }, (e) => {
     $('#grade').innerHTML = `<p class="vazio">${esc(t('erroProdutos'))}<br><small>${esc(e.message)}</small></p>`;
   });
@@ -90,7 +91,7 @@ function renderizar() {
     .filter((p) =>
       (categoria === '*' || (p.categoria || 'Geral') === categoria) &&
       (!termo || norm(`${p.nome} ${p.nome_it} ${p.codigo} ${p.descricao} ${p.descricao_it} ${p.categoria}`).includes(termo)))
-    .sort((a, b) => nomeProduto(a).localeCompare(nomeProduto(b), idioma));
+    .sort((a, b) => (b.destaque ? 1 : 0) - (a.destaque ? 1 : 0) || nomeProduto(a).localeCompare(nomeProduto(b), idioma));
 
   $('#grade').innerHTML = lista.length
     ? lista.map(cardProduto).join('')
@@ -101,16 +102,21 @@ const seloEstoque = (p) => (Number(p.estoque) > 0
   ? `<span class="selo pronta">${esc(t('pronta', { n: Number(p.estoque) }))}</span>`
   : `<span class="selo encomenda">${esc(t('encomenda'))}</span>`);
 
+const precoHTML = (p) => (p.precoAntigo > p.preco
+  ? `<span class="preco"><s>${euro(p.precoAntigo)}</s> <strong class="promo">${euro(p.preco)}</strong></span>`
+  : `<strong>${euro(p.preco)}</strong>`);
+
 const fotoHTML = (p) => (p.foto ? `<img src="${esc(p.foto)}" alt="${esc(nomeProduto(p))}" loading="lazy">` : '<span>🧴</span>');
 
 function cardProduto(p) {
   return `<article class="card">
-    <div class="foto" data-ver="${esc(p.id)}">${fotoHTML(p)}</div>
+    <div class="foto" data-ver="${esc(p.id)}">${fotoHTML(p)}
+      ${p.destaque ? `<span class="fita">${esc(t(p.precoAntigo > p.preco ? 'promocao' : 'destaque'))}</span>` : ''}</div>
     <div class="info">
       <h3>${esc(nomeProduto(p))}</h3>
       ${p.codigo ? `<small>${esc(t('cod'))} ${esc(p.codigo)}</small>` : ''}
       ${seloEstoque(p)}
-      <div class="linha"><strong>${euro(p.preco)}</strong>
+      <div class="linha">${precoHTML(p)}
         <button class="btn peq" data-add="${esc(p.id)}">${esc(t('adicionar'))}</button></div>
     </div></article>`;
 }
@@ -138,10 +144,35 @@ function verProduto(id) {
     ${p.codigo ? `<small>${esc(t('codigo'))} ${esc(p.codigo)} · ${esc(p.categoria || 'Geral')}</small>` : ''}
     ${seloEstoque(p)}
     ${desc ? `<p style="white-space:pre-line;margin:0">${esc(desc)}</p>` : ''}
-    <div class="total"><span>${euro(p.preco)}</span>
-      <button class="btn" id="det-add">${esc(t('adicionarCarrinho'))}</button></div>`;
+    <div class="total"><span>${precoHTML(p)}</span>
+      <button class="btn" id="det-add">${esc(t('adicionarCarrinho'))}</button></div>
+    <button class="btn sec cheio" id="det-share">📤 ${esc(t('compartilhar'))}</button>`;
   $('#det-add').onclick = () => { adicionar(p.id); fechar('dlg-produto'); };
+  $('#det-share').onclick = () => compartilhar(p);
   abrir('dlg-produto');
+}
+
+// Compartilhar produto: no celular abre o menu do sistema (WhatsApp, Instagram...);
+// no computador copia o link.
+async function compartilhar(p) {
+  const url = `${location.origin}${location.pathname}?p=${encodeURIComponent(p.id)}`;
+  const texto = `${nomeProduto(p)} — ${euro(p.preco)}`;
+  try {
+    if (navigator.share) return await navigator.share({ title: nomeProduto(p), text: texto, url });
+    await navigator.clipboard.writeText(`${texto}\n${url}`);
+    toast(t('linkCopiado'));
+  } catch (err) {
+    if (err?.name !== 'AbortError') window.open(linkWhats('', `${texto}\n${url}`), '_blank');
+  }
+}
+
+// Abre direto o produto quando a cliente chega por um link compartilhado (?p=...)
+let produtoDoLink = new URLSearchParams(location.search).get('p');
+function abrirProdutoDoLink() {
+  if (!produtoDoLink || !produtos.some((x) => x.id === produtoDoLink)) return;
+  const id = produtoDoLink;
+  produtoDoLink = null;
+  verProduto(id);
 }
 
 // ---------- carrinho ----------
@@ -212,10 +243,19 @@ $('#form-login').addEventListener('submit', async (e) => {
   const senha = $('#login-senha').value;
   $('#login-erro').textContent = '';
   try {
-    if (acaoLogin === 'criar') await createUserWithEmailAndPassword(auth, email, senha);
-    else await signInWithEmailAndPassword(auth, email, senha);
+    if (acaoLogin === 'criar') {
+      const falta = problemasSenha(senha, 8);
+      if (falta.length) {
+        const nomes = { 'letra minúscula': t('faltaMinusc'), 'letra maiúscula': t('faltaMaiusc'), 'número': t('faltaNum') };
+        throw new Error(t('senhaFraca', { f: falta.map((x) => nomes[x] || t('faltaMin', { n: 8 })).join(', ') }));
+      }
+      await createUserWithEmailAndPassword(auth, email, senha);
+    } else {
+      await signInWithEmailAndPassword(auth, email, senha);
+    }
+    $('#login-senha').value = '';
     fechar('dlg-login');
-  } catch (err) { $('#login-erro').textContent = erroAuth(err); }
+  } catch (err) { $('#login-erro').textContent = err.code ? erroAuth(err) : err.message; }
 });
 
 $('#btn-google').addEventListener('click', async () => {

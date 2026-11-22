@@ -23,10 +23,23 @@
       <h2>Entrar no painel</h2>
       <label>E-mail <input type="email" id="adm-email" required autocomplete="email"></label>
       <label>Senha <input type="password" id="adm-senha" required minlength="6" autocomplete="current-password"></label>
+      <p class="dica" id="regras-senha">Para criar a conta: mínimo 10 caracteres, com letra maiúscula, minúscula, número e símbolo.</p>
       <p class="erro" id="adm-erro"></p>
       <button class="btn cheio" type="submit" data-acao="entrar">Entrar</button>
       <button class="btn sec cheio" type="submit" data-acao="criar">Criar conta da loja (primeira vez)</button>
+      <button class="link" type="button" id="adm-esqueci">Esqueci minha senha</button>
     </form>
+  </section>
+
+  <section id="tela-verificar" class="centro" hidden>
+    <div class="bloco">
+      <h2>Confirme seu e-mail 🔒</h2>
+      <p>Por segurança, o painel só abre depois de confirmar o e-mail da loja.
+        Enviamos um link para <b id="email-verificar"></b>. Abra o e-mail, toque no link e depois volte aqui.</p>
+      <button class="btn cheio" id="btn-ja-confirmei">Já confirmei</button>
+      <button class="btn sec cheio" id="btn-reenviar">Reenviar e-mail</button>
+      <p class="dica">Não chegou? Olhe a pasta de spam.</p>
+    </div>
   </section>
 
   <section id="tela-sem-acesso" class="centro" hidden>
@@ -47,7 +60,9 @@
       <button class="aba" data-aba="importar">📂 Importar</button>
       <button class="aba" data-aba="clientes">👥 Clientes</button>
       <button class="aba" data-aba="loja">⚙️ Loja</button>
+      <button class="aba" data-aba="backup">💾 Backup</button>
     </nav>
+    <div class="aviso-demo" id="aviso-backup" hidden></div>
 
     <!-- PEDIDOS -->
     <section class="painel ativo" id="aba-pedidos">
@@ -85,6 +100,8 @@
           <label>Foto <input type="file" id="p-foto" accept="image/*"></label>
           <img id="p-prev" class="prev-foto" alt="" hidden>
           <label class="check"><input type="checkbox" id="p-ativo" checked> <span>Visível na loja</span></label>
+          <label class="check"><input type="checkbox" id="p-destaque"> <span>⭐ Destaque / promoção (aparece primeiro na loja)</span></label>
+          <label>Preço antigo (€, opcional — aparece riscado) <input type="text" id="p-preco-antigo" inputmode="decimal" placeholder="Ex.: 59,90"></label>
           <p class="erro" id="p-erro"></p>
           <div class="dupla">
             <button class="btn" type="submit" id="btn-salvar-prod">Salvar produto</button>
@@ -154,6 +171,36 @@
         <label>Aviso de privacidade em italiano (vazio = texto padrão) <textarea id="cfg-priv-it"></textarea></label>
         <button class="btn" type="submit">Salvar</button>
       </form>
+    </section>
+    <!-- BACKUP -->
+    <section class="painel" id="aba-backup">
+      <div class="bloco">
+        <h2>💾 Backup completo</h2>
+        <p class="dica">Baixa um arquivo com <b>todos</b> os produtos, pedidos, clientes e configurações.
+          Guarde no Google Drive ou no e-mail. Recomendado: uma vez por semana.</p>
+        <p id="info-backup" class="caixa"></p>
+        <label class="check"><input type="checkbox" id="bk-fotos" checked> <span>Incluir fotos dos produtos (arquivo fica maior)</span></label>
+        <button class="btn" id="btn-backup">Baixar backup agora</button>
+      </div>
+      <div class="bloco">
+        <h2>📊 Exportar planilha</h2>
+        <p class="dica">Planilha do Excel com produtos, pedidos e clientes, para consultar ou imprimir.</p>
+        <button class="btn sec" id="btn-exportar">Baixar planilha (.xlsx)</button>
+      </div>
+      <div class="bloco">
+        <h2>♻️ Restaurar backup</h2>
+        <p class="dica">Use só se algo foi apagado por engano. Os dados do arquivo voltam para o app;
+          o que foi criado depois do backup continua lá.</p>
+        <input type="file" id="arquivo-backup" accept=".json,application/json">
+        <div id="previa-backup"></div>
+        <button class="btn perigo" id="btn-restaurar" hidden>Restaurar agora</button>
+      </div>
+      <div class="bloco">
+        <h2>🔒 Segurança</h2>
+        <p class="dica">O painel fecha sozinho depois de 30 minutos sem uso. Nunca passe sua senha para ninguém.</p>
+        <button class="btn sec" id="btn-trocar-senha">Trocar minha senha (envia link por e-mail)</button>
+        <button class="btn sec" id="btn-sair-todos">Sair deste aparelho</button>
+      </div>
     </section>
   </div>
 

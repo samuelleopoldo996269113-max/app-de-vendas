@@ -7,11 +7,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // A loja só tem acesso com o e-mail CERTO e CONFIRMADO (impede que alguém
+    // crie uma conta falsa com o e-mail dela antes dela).
     function isAdmin() {
       return request.auth != null
+        && request.auth.token.email_verified == true
         && request.auth.token.email.lower() == 'email.da.loja@exemplo.com';
     }
     function logado() { return request.auth != null; }
+    function textoOk(v, max) { return v is string && v.size() <= max; }
 
     // Produtos: todo mundo vê, só a loja altera
     match /produtos/{id} {
@@ -19,27 +23,54 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Nome da loja, WhatsApp, textos: todo mundo vê, só a loja altera
+    // Nome da loja, WhatsApp, PayPal, textos, data do último backup
     match /config/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Cadastro da cliente: só ela mesma e a loja
+    // Cadastro da cliente: só ela mesma e a loja; campos e tamanhos controlados
     match /clientes/{uid} {
-      allow read, write: if logado() && (request.auth.uid == uid || isAdmin());
+      allow read: if logado() && (request.auth.uid == uid || isAdmin());
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || (
+        logado() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['nome', 'whatsapp', 'email', 'endereco', 'idioma', 'privacidadeAceita', 'criadoEm', 'atualizadoEm'])
+        && textoOk(request.resource.data.nome, 120)
+        && textoOk(request.resource.data.whatsapp, 30)
+        && request.resource.data.privacidadeAceita == true
+      );
     }
 
-    // Pedidos: a cliente cria e vê os dela; só a loja muda status
+    // Pedidos: a cliente cria (com dados válidos) e vê só os dela; só a loja muda status
     match /pedidos/{id} {
-      allow create: if logado()
+      allow create: if isAdmin() || (
+        logado()
+        && request.resource.data.keys().hasOnly(
+             ['clienteId', 'clienteNome', 'clienteWhatsapp', 'clienteEmail', 'idioma', 'itens', 'total',
+              'entrega', 'endereco', 'observacao', 'pagamento', 'pago', 'status', 'estoqueBaixado', 'criadoEm'])
         && request.resource.data.clienteId == request.auth.uid
         && request.resource.data.status == 'recebido'
         && request.resource.data.pago == false
         && request.resource.data.estoqueBaixado == false
-        && request.resource.data.pagamento in ['dinheiro', 'paypal'];
+        && request.resource.data.pagamento in ['dinheiro', 'paypal']
+        && request.resource.data.entrega in ['entrega', 'retirada']
+        && request.resource.data.itens is list
+        && request.resource.data.itens.size() > 0
+        && request.resource.data.itens.size() <= 100
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && textoOk(request.resource.data.endereco, 500)
+        && textoOk(request.resource.data.observacao, 1000)
+      );
       allow read: if logado() && (resource.data.clienteId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    // Qualquer outra coisa: bloqueado
+    match /{tudo=**} {
+      allow read, write: if false;
     }
   }
 }
