@@ -76,6 +76,12 @@
             <label>Estoque (pronta entrega) <input type="number" id="p-estoque" min="0" value="0"></label>
           </div>
           <label>Descrição <textarea id="p-descricao"></textarea></label>
+          <details>
+            <summary>🇮🇹 Em italiano (opcional)</summary>
+            <label>Nome em italiano <input type="text" id="p-nome-it"></label>
+            <label>Descrição em italiano <textarea id="p-descricao-it"></textarea></label>
+            <p class="dica">Se ficar vazio, a loja em italiano mostra o texto em português.</p>
+          </details>
           <label>Foto <input type="file" id="p-foto" accept="image/*"></label>
           <img id="p-prev" class="prev-foto" alt="" hidden>
           <label class="check"><input type="checkbox" id="p-ativo" checked> <span>Visível na loja</span></label>
@@ -105,7 +111,8 @@
     <section class="painel" id="aba-importar">
       <div class="bloco">
         <h2>📊 Importar planilha (Excel ou CSV)</h2>
-        <p class="dica">Colunas aceitas: <b>nome</b>, <b>codigo</b>, <b>categoria</b>, <b>descricao</b>, <b>preco</b>, <b>estoque</b>.
+        <p class="dica">Colunas aceitas: <b>nome</b>, <b>codigo</b>, <b>categoria</b>, <b>descricao</b>, <b>preco</b>, <b>estoque</b>
+          e, se quiser, <b>nome_it</b> e <b>descricao_it</b> (italiano).
           Se o código já existir, o produto é atualizado em vez de duplicado.</p>
         <button class="btn sec peq" id="btn-modelo" style="align-self:flex-start">Baixar planilha modelo</button>
         <input type="file" id="arquivo-planilha" accept=".xlsx,.xls,.csv,.ods">
@@ -140,9 +147,11 @@
         <h2>Dados da loja</h2>
         <label>Nome da loja <input type="text" id="cfg-nome" required></label>
         <label>WhatsApp da loja (com código do país) <input type="tel" id="cfg-whats" placeholder="+39 ..."></label>
-        <label>Texto sobre pagamento (aparece ao finalizar o pedido)
-          <textarea id="cfg-pagamento" placeholder="Ex.: Pagamento na entrega ou por transferência."></textarea></label>
-        <label>Aviso de privacidade (deixe vazio para usar o padrão) <textarea id="cfg-priv"></textarea></label>
+        <label>PayPal.me (seu usuário ou link — deixe vazio para aceitar só dinheiro)
+          <input type="text" id="cfg-paypal" placeholder="paypal.me/seunome"></label>
+        <p class="dica">Pagamento em dinheiro na entrega/retirada está sempre disponível.</p>
+        <label>Aviso de privacidade em português (vazio = texto padrão) <textarea id="cfg-priv"></textarea></label>
+        <label>Aviso de privacidade em italiano (vazio = texto padrão) <textarea id="cfg-priv-it"></textarea></label>
         <button class="btn" type="submit">Salvar</button>
       </form>
     </section>

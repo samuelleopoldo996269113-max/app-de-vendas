@@ -67,6 +67,7 @@ function iniciarPainel() {
   cancelar.push(onSnapshot(query(collection(db, 'pedidos'), orderBy('criadoEm', 'desc')), (s) => {
     pedidos = s.docs.map((d) => ({ id: d.id, ...d.data() }));
     renderPedidos();
+    renderClientes();
   }));
   cancelar.push(onSnapshot(collection(db, 'clientes'), (s) => {
     clientes = s.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -93,7 +94,9 @@ function renderPedidos() {
         <b>#${p.id.slice(0, 6).toUpperCase()} · ${esc(p.clienteNome)}</b>
         <span class="status ${esc(p.status)}">${esc(STATUS[p.status] || p.status)}</span>
       </div>
-      <small>${dataBR(p.criadoEm)} · ${p.entrega === 'entrega' ? '🚚 Entrega' : '🏠 Retirada'} · ${p.pago ? '✅ Pago' : '⏳ Não pago'}</small>
+      <small>${dataBR(p.criadoEm)} · ${p.entrega === 'entrega' ? '🚚 Entrega' : '🏠 Retirada'} ·
+        ${p.pagamento === 'paypal' ? '🅿️ PayPal' : '💶 Dinheiro'} · ${p.pago ? '✅ Pago' : '⏳ Não pago'}
+        ${p.idioma === 'it' ? ' · 🇮🇹' : ''}</small>
       ${p.endereco ? `<div class="caixa" style="white-space:pre-line">${esc(p.endereco)}</div>` : ''}
       <ul>${(p.itens || []).map((i) => `<li>${i.qtd}× ${esc(i.nome)} ${i.codigo ? `<small>(${esc(i.codigo)})</small>` : ''} — ${euro(i.qtd * i.preco)}
         ${i.encomenda ? `<br><small>➜ ${i.prontaEntrega} pronta entrega, <b>${i.encomenda} sob encomenda</b></small>` : ''}</li>`).join('')}</ul>
@@ -225,6 +228,8 @@ function editarProduto(id) {
   $('#p-preco').value = String(p.preco ?? '').replace('.', ',');
   $('#p-estoque').value = Number(p.estoque) || 0;
   $('#p-descricao').value = p.descricao || '';
+  $('#p-nome-it').value = p.nome_it || '';
+  $('#p-descricao-it').value = p.descricao_it || '';
   $('#p-ativo').checked = p.ativo !== false;
   if (p.foto) { $('#p-prev').src = p.foto; $('#p-prev').hidden = false; }
   $('#titulo-form').textContent = 'Editar produto';
@@ -254,6 +259,8 @@ $('#form-produto').addEventListener('submit', async (e) => {
     preco: parsePreco($('#p-preco').value),
     estoque: parseInteiro($('#p-estoque').value),
     descricao: $('#p-descricao').value.trim(),
+    nome_it: $('#p-nome-it').value.trim(),
+    descricao_it: $('#p-descricao-it').value.trim(),
     ativo: $('#p-ativo').checked,
     atualizadoEm: serverTimestamp()
   };
@@ -296,13 +303,15 @@ const COLUNAS = {
   categoria: ['categoria', 'linha', 'tipo'],
   descricao: ['descricao', 'detalhes', 'obs'],
   preco: ['preco', 'valor', 'preco (eur)', 'preco eur', 'prezzo'],
-  estoque: ['estoque', 'quantidade', 'qtd', 'qtde']
+  estoque: ['estoque', 'quantidade', 'qtd', 'qtde'],
+  nome_it: ['nome_it', 'nome it', 'nome italiano', 'nome em italiano', 'nome (italiano)'],
+  descricao_it: ['descricao_it', 'descricao it', 'descricao italiano', 'descricao em italiano']
 };
 
 function mapearLinha(linha) {
   const out = {};
   for (const [chave, valor] of Object.entries(linha)) {
-    const k = norm(chave).replace(/[€()]/g, '').trim();
+    const k = norm(chave).replace(/[€]/g, '').replace(/\s+/g, ' ').trim();
     for (const [campo, nomes] of Object.entries(COLUNAS)) {
       if (out[campo] === undefined && nomes.includes(k)) out[campo] = valor;
     }
@@ -313,7 +322,9 @@ function mapearLinha(linha) {
     categoria: String(out.categoria ?? '').trim() || 'Geral',
     descricao: String(out.descricao ?? '').trim(),
     preco: parsePreco(out.preco),
-    estoque: parseInteiro(out.estoque)
+    estoque: parseInteiro(out.estoque),
+    nome_it: String(out.nome_it ?? '').trim(),
+    descricao_it: String(out.descricao_it ?? '').trim()
   };
 }
 
@@ -378,9 +389,9 @@ $('#btn-importar').addEventListener('click', async () => {
 });
 
 $('#btn-modelo').addEventListener('click', () => {
-  const csv = '﻿nome;codigo;categoria;descricao;preco;estoque\n' +
-    'Perfume exemplo 100ml;12345;Perfumaria;Fragrância floral;49,90;2\n' +
-    'Hidratante exemplo 200ml;67890;Corpo e banho;Pele macia;18,50;0\n';
+  const csv = '\uFEFFnome;codigo;categoria;descricao;preco;estoque;nome_it;descricao_it\n' +
+    'Perfume exemplo 100ml;12345;Perfumaria;Fragrância floral;49,90;2;Profumo esempio 100ml;Fragranza floreale\n' +
+    'Hidratante exemplo 200ml;67890;Corpo e banho;Pele macia;18,50;0;;\n';
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   a.download = 'modelo-produtos.csv';
@@ -415,12 +426,20 @@ function renderClientes() {
   const termo = norm($('#busca-clientes').value);
   const lista = clientes.filter((c) => !termo || norm(`${c.nome} ${c.whatsapp} ${c.email} ${c.endereco?.cidade}`).includes(termo));
   $('#lista-clientes').innerHTML = lista.length ? lista.map((c) => {
-    const qtdPed = pedidos.filter((p) => p.clienteId === c.id).length;
+    const peds = pedidos.filter((p) => p.clienteId === c.id && p.status !== 'cancelado');
+    const gasto = peds.reduce((s, p) => s + (Number(p.total) || 0), 0);
     const e = c.endereco || {};
+    const historico = peds.length ? `<details><summary>Histórico de compras</summary>
+      ${peds.map((p) => `<div class="caixa">
+        <b>${dataBR(p.criadoEm)}</b> · ${esc(STATUS[p.status] || p.status)} · ${euro(p.total)}
+        <ul>${(p.itens || []).map((i) => `<li>${i.qtd}× ${esc(i.nome)}</li>`).join('')}</ul></div>`).join('')}
+      </details>` : '';
     return `<div class="pedido">
-      <div class="cab"><b>${esc(c.nome)}</b><small>${qtdPed} pedido(s)</small></div>
+      <div class="cab"><b>${esc(c.nome)} ${c.idioma === 'it' ? '🇮🇹' : ''}</b>
+        <small>${peds.length} pedido(s) · ${euro(gasto)}</small></div>
       <small>${esc(c.email)} · ${esc(c.whatsapp)}</small>
       ${e.rua ? `<small>${esc(e.rua)}, ${esc(e.cap)} ${esc(e.cidade)} ${e.complemento ? '· ' + esc(e.complemento) : ''}</small>` : ''}
+      ${historico}
       ${c.whatsapp ? `<a class="btn peq" style="align-self:flex-start;text-decoration:none" target="_blank" rel="noopener" href="${esc(linkWhats(c.whatsapp))}">WhatsApp</a>` : ''}
     </div>`;
   }).join('') : '<p class="vazio">Nenhum cliente ainda.</p>';
@@ -432,8 +451,9 @@ async function carregarConfig() {
   const c = d.exists() ? d.data() : {};
   $('#cfg-nome').value = c.nome || '';
   $('#cfg-whats').value = c.whatsapp || '';
-  $('#cfg-pagamento').value = c.pagamento || '';
+  $('#cfg-paypal').value = c.paypal || '';
   $('#cfg-priv').value = c.privacidade || '';
+  $('#cfg-priv-it').value = c.privacidade_it || '';
 }
 $('#form-loja').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -441,8 +461,9 @@ $('#form-loja').addEventListener('submit', async (e) => {
     await setDoc(doc(db, 'config', 'loja'), {
       nome: $('#cfg-nome').value.trim(),
       whatsapp: $('#cfg-whats').value.trim(),
-      pagamento: $('#cfg-pagamento').value.trim(),
-      privacidade: $('#cfg-priv').value.trim()
+      paypal: $('#cfg-paypal').value.trim(),
+      privacidade: $('#cfg-priv').value.trim(),
+      privacidade_it: $('#cfg-priv-it').value.trim()
     }, { merge: true });
     toast('Dados da loja salvos');
   } catch (err) { toast('Erro: ' + err.message, 'erro'); }

@@ -2,6 +2,8 @@
 
 Loja online com catálogo para as clientes e painel para a dona da loja.
 
+- **Idiomas:** a loja tem português e italiano (botão 🇮🇹/🇧🇷 no topo). Os produtos podem ter nome e descrição em italiano.
+- **Pagamento:** dinheiro na entrega ou na retirada, ou PayPal, se o usuário PayPal.me for preenchido na aba ⚙️ Loja.
 - **Loja (clientes):** `index.html`. Qualquer pessoa vê os produtos e o estoque. Para pedir, a cliente cria a conta (e-mail/senha ou Google), preenche os dados e escolhe entre entrega e retirada.
 - **Painel (loja):** `admin.html`. Pedidos, produtos, estoque, importação de planilha e fotos, clientes e configurações.
 
@@ -54,8 +56,7 @@ As fotos são reduzidas e guardadas no próprio banco, para continuar no plano g
 
 ## Próximas etapas (a decidir)
 
-- Pagamento online (Stripe, PayPal, Satispay) ou só na entrega
 - Aviso automático do pedido no WhatsApp da loja
 - Leitura automática do catálogo em PDF por IA
-- Catálogo em italiano
+- Controle de encomendas ao Boticário (quando houver pedidos)
 - Domínio próprio

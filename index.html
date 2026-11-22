@@ -13,16 +13,15 @@
 <body>
   <header class="topo">
     <h1 id="nome-loja">Loja</h1>
-    <button class="icone" id="btn-conta" aria-label="Minha conta">👤 <span id="txt-conta">Entrar</span></button>
+    <button class="icone" id="btn-idioma" aria-label="Idioma / Lingua">🇮🇹</button>
+    <button class="icone" id="btn-conta" aria-label="Conta">👤 <span id="txt-conta">Entrar</span></button>
     <button class="icone" id="btn-carrinho" aria-label="Carrinho">🛍️<span class="badge" id="contador"></span></button>
   </header>
-  <div id="aviso-demo" class="aviso-demo" hidden>
-    Modo demonstração: o Firebase ainda não foi configurado (veja o README).
-  </div>
+  <div id="aviso-demo" class="aviso-demo" data-i18n="demo" hidden></div>
 
-  <div class="busca"><input type="search" id="busca" placeholder="Buscar produto..."></div>
+  <div class="busca"><input type="search" id="busca" data-i18n-ph="buscar"></div>
   <nav class="chips" id="categorias"></nav>
-  <main class="grade" id="grade"><p class="vazio">Carregando produtos...</p></main>
+  <main class="grade" id="grade"><p class="vazio" data-i18n="carregando"></p></main>
 
   <!-- Detalhe do produto -->
   <dialog id="dlg-produto">
@@ -32,96 +31,102 @@
 
   <!-- Carrinho -->
   <dialog id="dlg-carrinho">
-    <div class="jan-topo"><h2>Seu carrinho</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="carrinho"></h2><button class="fechar" data-fechar>×</button></div>
     <div class="jan-corpo">
       <div id="itens-carrinho"></div>
-      <div class="total"><span>Total</span><span id="total-carrinho">€0</span></div>
-      <p class="dica">Itens acima do estoque disponível entram como <b>sob encomenda</b>.</p>
-      <button class="btn cheio" id="btn-finalizar">Finalizar pedido</button>
+      <div class="total"><span data-i18n="total"></span><span id="total-carrinho">€0</span></div>
+      <p class="dica" data-i18n-html="dicaEncomenda"></p>
+      <button class="btn cheio" id="btn-finalizar" data-i18n="finalizar"></button>
     </div>
   </dialog>
 
   <!-- Login / cadastro -->
   <dialog id="dlg-login">
-    <div class="jan-topo"><h2>Entrar ou criar conta</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="loginTitulo"></h2><button class="fechar" data-fechar>×</button></div>
     <form class="jan-corpo" id="form-login">
-      <p class="dica">Para fazer pedidos você precisa de uma conta.</p>
-      <label>E-mail <input type="email" id="login-email" required autocomplete="email"></label>
-      <label>Senha <input type="password" id="login-senha" required minlength="6" autocomplete="current-password"></label>
+      <p class="dica" data-i18n="loginDica"></p>
+      <label><span data-i18n="email"></span> <input type="email" id="login-email" required autocomplete="email"></label>
+      <label><span data-i18n="senha"></span> <input type="password" id="login-senha" required minlength="6" autocomplete="current-password"></label>
       <p class="erro" id="login-erro"></p>
-      <button class="btn cheio" type="submit" data-acao="entrar">Entrar</button>
-      <button class="btn sec cheio" type="submit" data-acao="criar">Criar conta</button>
-      <p class="ou">ou</p>
-      <button class="btn google cheio" type="button" id="btn-google">Entrar com Google</button>
-      <button class="link" type="button" id="btn-esqueci">Esqueci minha senha</button>
+      <button class="btn cheio" type="submit" data-acao="entrar" data-i18n="entrar"></button>
+      <button class="btn sec cheio" type="submit" data-acao="criar" data-i18n="criarConta"></button>
+      <p class="ou" data-i18n="ou"></p>
+      <button class="btn google cheio" type="button" id="btn-google" data-i18n="google"></button>
+      <button class="link" type="button" id="btn-esqueci" data-i18n="esqueci"></button>
     </form>
   </dialog>
 
   <!-- Dados da cliente -->
   <dialog id="dlg-perfil">
-    <div class="jan-topo"><h2>Seus dados</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="seusDados"></h2><button class="fechar" data-fechar>×</button></div>
     <form class="jan-corpo" id="form-perfil">
-      <label>Nome completo <input type="text" id="pf-nome" required></label>
-      <label>WhatsApp (com código do país) <input type="tel" id="pf-whats" required placeholder="+39 333 123 4567"></label>
-      <label>Endereço (rua e número) <input type="text" id="pf-rua"></label>
+      <label><span data-i18n="nome"></span> <input type="text" id="pf-nome" required></label>
+      <label><span data-i18n="whats"></span> <input type="tel" id="pf-whats" required placeholder="+39 333 123 4567"></label>
+      <label><span data-i18n="rua"></span> <input type="text" id="pf-rua"></label>
       <div class="dupla">
-        <label>Cidade <input type="text" id="pf-cidade"></label>
-        <label>CAP (CEP) <input type="text" id="pf-cap" inputmode="numeric"></label>
+        <label><span data-i18n="cidade"></span> <input type="text" id="pf-cidade"></label>
+        <label><span data-i18n="cap"></span> <input type="text" id="pf-cap" inputmode="numeric"></label>
       </div>
-      <label>Complemento / referência <input type="text" id="pf-comp"></label>
+      <label><span data-i18n="comp"></span> <input type="text" id="pf-comp"></label>
       <label class="check"><input type="checkbox" id="pf-priv" required>
-        <span>Li e aceito o <button type="button" class="link" id="btn-ver-priv">aviso de privacidade</button>.</span></label>
+        <span><span data-i18n="aceito"></span> <button type="button" class="link" id="btn-ver-priv" data-i18n="avisoPriv"></button>.</span></label>
       <p class="erro" id="pf-erro"></p>
-      <button class="btn cheio" type="submit">Salvar</button>
+      <button class="btn cheio" type="submit" data-i18n="salvar"></button>
     </form>
   </dialog>
 
   <!-- Finalizar -->
   <dialog id="dlg-checkout">
-    <div class="jan-topo"><h2>Finalizar pedido</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="finalizarTitulo"></h2><button class="fechar" data-fechar>×</button></div>
     <form class="jan-corpo" id="form-checkout">
       <div class="opcoes">
-        <label><input type="radio" name="entrega" value="entrega" checked> 🚚 Entrega</label>
-        <label><input type="radio" name="entrega" value="retirada"> 🏠 Retirar</label>
+        <label><input type="radio" name="entrega" value="entrega" checked> <span data-i18n="entrega"></span></label>
+        <label><input type="radio" name="entrega" value="retirada"> <span data-i18n="retirar"></span></label>
       </div>
-      <label id="campo-endereco">Endereço de entrega <textarea id="ck-endereco" required></textarea></label>
-      <label>Observação (opcional) <textarea id="ck-obs" placeholder="Ex.: melhor horário, presente..."></textarea></label>
+      <label id="campo-endereco"><span data-i18n="enderecoEntrega"></span> <textarea id="ck-endereco" required></textarea></label>
+      <label><span data-i18n="obs"></span> <textarea id="ck-obs" data-i18n-ph="obsPh"></textarea></label>
       <div class="caixa" id="ck-resumo"></div>
-      <div class="caixa"><b>Pagamento:</b> <span id="ck-pagamento">na entrega ou por transferência, combinado com a loja.</span></div>
+      <b data-i18n="pagamento"></b>
+      <div class="opcoes" id="opcoes-pagamento">
+        <label><input type="radio" name="pagamento" value="dinheiro" checked> <span data-i18n="pagDinheiro"></span></label>
+        <label id="op-paypal" hidden><input type="radio" name="pagamento" value="paypal"> <span data-i18n="pagPaypal"></span></label>
+      </div>
+      <p class="dica" id="ck-pag-dica"></p>
       <p class="erro" id="ck-erro"></p>
-      <button class="btn cheio" type="submit" id="btn-confirmar">Confirmar pedido</button>
+      <button class="btn cheio" type="submit" id="btn-confirmar" data-i18n="confirmar"></button>
     </form>
   </dialog>
 
   <!-- Pedido feito -->
   <dialog id="dlg-sucesso">
-    <div class="jan-topo"><h2>Pedido enviado! 🎉</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="sucessoTitulo"></h2><button class="fechar" data-fechar>×</button></div>
     <div class="jan-corpo">
-      <p>Recebemos seu pedido. Você pode acompanhar o andamento em <b>Meus pedidos</b>.</p>
-      <a class="btn cheio" id="sucesso-whats" target="_blank" rel="noopener" hidden style="text-align:center;text-decoration:none">Falar com a loja no WhatsApp</a>
-      <button class="btn sec cheio" id="btn-ver-pedidos">Ver meus pedidos</button>
+      <p data-i18n-html="sucessoTexto"></p>
+      <a class="btn cheio" id="sucesso-paypal" target="_blank" rel="noopener" hidden style="text-align:center;text-decoration:none"></a>
+      <a class="btn cheio" id="sucesso-whats" target="_blank" rel="noopener" hidden style="text-align:center;text-decoration:none" data-i18n="falarWhats"></a>
+      <button class="btn sec cheio" id="btn-ver-pedidos" data-i18n="verPedidos"></button>
     </div>
   </dialog>
 
   <!-- Conta -->
   <dialog id="dlg-conta">
-    <div class="jan-topo"><h2 id="conta-titulo">Minha conta</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 id="conta-titulo"></h2><button class="fechar" data-fechar>×</button></div>
     <div class="jan-corpo">
-      <button class="btn cheio" id="btn-meus-pedidos">📦 Meus pedidos</button>
-      <button class="btn sec cheio" id="btn-meus-dados">✏️ Meus dados</button>
-      <button class="btn sec cheio" id="btn-sair">Sair</button>
+      <button class="btn cheio" id="btn-meus-pedidos" data-i18n="meusPedidos"></button>
+      <button class="btn sec cheio" id="btn-meus-dados" data-i18n="meusDados"></button>
+      <button class="btn sec cheio" id="btn-sair" data-i18n="sair"></button>
     </div>
   </dialog>
 
   <!-- Meus pedidos -->
   <dialog id="dlg-pedidos">
-    <div class="jan-topo"><h2>Meus pedidos</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="verPedidos"></h2><button class="fechar" data-fechar>×</button></div>
     <div class="jan-corpo" id="lista-pedidos"></div>
   </dialog>
 
   <!-- Privacidade -->
   <dialog id="dlg-priv">
-    <div class="jan-topo"><h2>Aviso de privacidade</h2><button class="fechar" data-fechar>×</button></div>
+    <div class="jan-topo"><h2 data-i18n="privTitulo"></h2><button class="fechar" data-fechar>×</button></div>
     <div class="jan-corpo" id="texto-priv"></div>
   </dialog>
 

@@ -36,7 +36,8 @@ service cloud.firestore {
         && request.resource.data.clienteId == request.auth.uid
         && request.resource.data.status == 'recebido'
         && request.resource.data.pago == false
-        && request.resource.data.estoqueBaixado == false;
+        && request.resource.data.estoqueBaixado == false
+        && request.resource.data.pagamento in ['dinheiro', 'paypal'];
       allow read: if logado() && (resource.data.clienteId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }
