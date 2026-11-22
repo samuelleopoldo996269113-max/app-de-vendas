@@ -1,6 +1,6 @@
 // Service worker: permite instalar o app e abrir mais rápido.
 // Ao mudar arquivos do app, aumente a versão abaixo.
-const VERSAO = 'vendas-v3';
+const VERSAO = 'vendas-v4';
 const ARQUIVOS = [
   './', 'index.html', 'admin.html', 'css/style.css', 'js/loja.js', 'js/admin.js',
   'js/util.js', 'js/i18n.js', 'js/firebase.js', 'js/firebase-config.js', 'manifest.json', 'icon.svg'

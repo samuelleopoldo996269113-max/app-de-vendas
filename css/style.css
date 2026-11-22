@@ -12,6 +12,7 @@
   --raio: 14px;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -198,3 +199,10 @@ details[open] { display: flex; flex-direction: column; gap: 8px; }
   font-weight: 700; padding: 3px 8px; border-radius: 999px; }
 .preco s { color: var(--suave); font-size: .8rem; }
 .promo { color: #b3261e; }
+
+@media (max-width: 520px) {
+  .prod-adm { flex-wrap: wrap; }
+  .prod-adm .dados { flex: 1 1 calc(100% - 70px); }
+  .prod-adm .dados b { white-space: normal; }
+  .prod-adm .acoes { flex: 1 1 100%; justify-content: flex-start; }
+}
