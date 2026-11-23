@@ -12,7 +12,7 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() in ['email.da.loja@exemplo.com'];
+        && request.auth.token.email.lower() in ['su.leopoldo@gmail.com'];
     }
     function logado() { return request.auth != null; }
     function textoOk(v, max) { return v is string && v.size() <= max; }
